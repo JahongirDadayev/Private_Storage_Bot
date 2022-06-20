@@ -1,6 +1,7 @@
 package com.example.restfulapi.state;
 
 public enum BotState {
+    HELP,
     START,
     AUTHENTICATION,
     NEW_LOGIN,
@@ -16,5 +17,7 @@ public enum BotState {
     POST_DOCUMENT,
     POST_PROGRAM,
     POST_CONTACT,
-    GET
+    GET,
+    GET_DOCUMENT,
+    CONFIRMATION
 }

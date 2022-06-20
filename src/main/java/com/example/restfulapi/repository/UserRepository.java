@@ -8,9 +8,11 @@ import java.util.Optional;
 public interface UserRepository extends JpaRepository<DbUser, Long> {
     Optional<DbUser> findByChatId(String chatId);
 
-    Boolean existsByLoginAndIdNot(String login, Long id);
+    Boolean existsByLogin(String login);
 
     Optional<DbUser> findByLogin(String login);
 
     Optional<DbUser> findByLoginAndPassword(String login, String password);
+
+    Long countAllByChatId(String chatId);
 }

@@ -18,6 +18,9 @@ public class DbDocument {
     @Column(name = "field_id", nullable = false)
     private String fieldId;
 
+    @Column(name = "type", nullable = false)
+    private String type;
+
     @ManyToOne(optional = false)
     @JoinColumn(name = "db_user")
     private DbUser dbUser;

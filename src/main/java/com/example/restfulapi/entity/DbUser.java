@@ -16,7 +16,7 @@ public class DbUser {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "login")
+    @Column(name = "login", unique = true)
     private String login;
 
     @Column(name = "password")
@@ -27,6 +27,9 @@ public class DbUser {
 
     @Column(name = "another_chat_id")
     private String anotherChatId;
+
+    @Column(name = "confirmation_chat_id")
+    private String confirmationChatId;
 
     @Column(name = "bot_state", nullable = false)
     @Enumerated(value = EnumType.STRING)

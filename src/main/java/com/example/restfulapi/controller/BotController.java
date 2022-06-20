@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
-import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
@@ -24,8 +23,6 @@ public class BotController extends TelegramLongPollingBot {
 
     @Override
     public void onUpdateReceived(Update update) {
-        Message message = update.getMessage();
-        System.out.println(message.getDocument().getMimeType());
         try {
             DbUser user = botService.getUser(update);
             if (user.getBotState() == BotState.START) {
@@ -43,11 +40,15 @@ public class BotController extends TelegramLongPollingBot {
             } else if (user.getBotState() == BotState.ACCEPTED) {
                 botService.tgAccept(update, user, true);
             } else if (user.getBotState() == BotState.FILES) {
-                botService.tgFails(update, user);
+                botService.tgFiles(update, user);
             } else if (user.getBotState() == BotState.POST) {
                 botService.tgPost(update, user);
             } else if (user.getBotState() == BotState.GET) {
                 botService.tgGet(update, user);
+            } else if (user.getBotState() == BotState.GET_DOCUMENT) {
+                botService.tgGetDocument(update, user);
+            } else if (user.getBotState() == BotState.CONFIRMATION) {
+                botService.tgConfirmation(update, user);
             }
         } catch (TelegramApiException e) {
             e.printStackTrace();
