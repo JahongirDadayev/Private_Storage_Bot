@@ -41,9 +41,6 @@ public class BotService {
     private DocumentRepository documentRepository;
 
     @Autowired
-    private ProgramRepository programRepository;
-
-    @Autowired
     private ContactRepository contactRepository;
 
     private final Map<String, String> authLogin = new HashMap<>();
@@ -104,13 +101,7 @@ public class BotService {
                 sendMessage.setChatId(message.getChatId().toString());
                 sendMessage.setReplyMarkup(markup);
                 sendMessage.setParseMode(ParseMode.MARKDOWN);
-                sendMessage.setText((isStart) ? "➖ Salom " + message.getFrom().getFirstName() + ". Virtual xotira  [botdan](http://t.me/virtual_memorybot) foydalanishingiz uchun yangi *shaxsiy kabinet* xosil qiling.\n" +
-                        "\n" +
-                        "➖ Agar sizda oldin akkount ochilgan bolsa *shaxsiy kabinetga kirish* tugmasini bosib akkountingizga kirishingiz mumkin\n" +
-                        " \n" +
-                        "➖Привет " + message.getFrom().getFirstName() + ". Создайте новый *личный кабинет* для использования [бота](http://t.me/virtual_memorybot) виртуальной памяти.\n" +
-                        "\n" +
-                        "➖ Если у вас уже есть учетная запись, вы можете получить доступ к своей учетной записи, нажав на *личный кабинет*" : "Tanlovni amalga oshiring ✅");
+                sendMessage.setText((isStart) ? "➖ Salom " + message.getFrom().getFirstName() + ". Virtual xotira  [botdan](http://t.me/virtual_memorybot) foydalanishingiz uchun yangi *shaxsiy kabinet* xosil qiling.\n" + "\n" + "➖ Agar sizda oldin akkount ochilgan bolsa *shaxsiy kabinetga kirish* tugmasini bosib akkountingizga kirishingiz mumkin\n" + " \n" + "➖Привет " + message.getFrom().getFirstName() + ". Создайте новый *личный кабинет* для использования [бота](http://t.me/virtual_memorybot) виртуальной памяти.\n" + "\n" + "➖ Если у вас уже есть учетная запись, вы можете получить доступ к своей учетной записи, нажав на *личный кабинет*" : "Tanlovni amalga oshiring ✅");
                 user.setBotState(BotState.AUTHENTICATION);
                 userRepository.save(user);
                 botController.execute(sendMessage);
@@ -173,7 +164,7 @@ public class BotService {
                 SendMessage sendMessage = new SendMessage();
                 sendMessage.setChatId(message.getChatId().toString());
                 sendMessage.setParseMode(ParseMode.MARKDOWN);
-                sendMessage.setText("Sizning botingizda " + userRepository.countAllByChatId(message.getChatId().toString()) + " ta foydalanuvchi ro'yxatdan o'tgan \uD83D\uDC4F");
+                sendMessage.setText("Sizning botingizda " + userRepository.countAllByChatIdNot(message.getChatId().toString()) + " ta foydalanuvchi ro'yxatdan o'tgan \uD83D\uDC4F");
                 botController.execute(sendMessage);
             } else {
                 SendMessage sendMessage = new SendMessage();
@@ -445,6 +436,17 @@ public class BotService {
                 sendMessage.setText("Xato amal bajardingiz ❌");
                 botController.execute(sendMessage);
             }
+        } else if (message.hasText()) {
+            if (message.getText().equals("⬅️ Ortga qaytish")) {
+                message.setText("/start");
+                tgStart(update, user, false);
+            } else {
+                SendMessage sendMessage = new SendMessage();
+                sendMessage.setChatId(message.getChatId().toString());
+                sendMessage.setParseMode(ParseMode.MARKDOWN);
+                sendMessage.setText("Xato amal bajardingiz ❌");
+                botController.execute(sendMessage);
+            }
         } else {
             SendMessage sendMessage = new SendMessage();
             sendMessage.setChatId(message.getChatId().toString());
@@ -586,47 +588,25 @@ public class BotService {
                 botController.execute(sendMessage);
             }
         } else if (message.hasDocument()) {
-            if (!message.getDocument().getFileName().substring(message.getDocument().getFileName().lastIndexOf(".") + 1).equals("apk")) {
-                DbDocument document = new DbDocument();
-                document.setFieldId(message.getDocument().getFileId());
-                document.setType(message.getDocument().getFileName().substring(message.getDocument().getFileName().lastIndexOf(".") + 1));
-                Optional<DbUser> optionalDbUser = userRepository.findByChatId((user.getAnotherChatId() != null) ? user.getAnotherChatId() : user.getChatId());
-                if (optionalDbUser.isPresent()) {
-                    document.setDbUser(optionalDbUser.get());
-                    documentRepository.save(document);
-                    SendMessage sendMessage = new SendMessage();
-                    sendMessage.setChatId(message.getChatId().toString());
-                    sendMessage.setParseMode(ParseMode.MARKDOWN);
-                    sendMessage.setReplyToMessageId(message.getMessageId());
-                    sendMessage.setText("Ma'lumot saqlandi ✅");
-                    botController.execute(sendMessage);
-                } else {
-                    SendMessage sendMessage = new SendMessage();
-                    sendMessage.setChatId(message.getChatId().toString());
-                    sendMessage.setParseMode(ParseMode.MARKDOWN);
-                    sendMessage.setText("Xatolik sababli ma'lumotlar saqlanmadi ❗️");
-                    botController.execute(sendMessage);
-                }
+            DbDocument document = new DbDocument();
+            document.setFieldId(message.getDocument().getFileId());
+            document.setType((message.getDocument().getFileName().substring(message.getDocument().getFileName().lastIndexOf(".") + 1)).toLowerCase());
+            Optional<DbUser> optionalDbUser = userRepository.findByChatId((user.getAnotherChatId() != null) ? user.getAnotherChatId() : user.getChatId());
+            if (optionalDbUser.isPresent()) {
+                document.setDbUser(optionalDbUser.get());
+                documentRepository.save(document);
+                SendMessage sendMessage = new SendMessage();
+                sendMessage.setChatId(message.getChatId().toString());
+                sendMessage.setParseMode(ParseMode.MARKDOWN);
+                sendMessage.setReplyToMessageId(message.getMessageId());
+                sendMessage.setText("Ma'lumot saqlandi ✅");
+                botController.execute(sendMessage);
             } else {
-                DbProgram program = new DbProgram();
-                program.setFieldId(message.getDocument().getFileId());
-                Optional<DbUser> optionalDbUser = userRepository.findByChatId((user.getAnotherChatId() != null) ? user.getAnotherChatId() : user.getChatId());
-                if (optionalDbUser.isPresent()) {
-                    program.setDbUser(optionalDbUser.get());
-                    programRepository.save(program);
-                    SendMessage sendMessage = new SendMessage();
-                    sendMessage.setChatId(message.getChatId().toString());
-                    sendMessage.setParseMode(ParseMode.MARKDOWN);
-                    sendMessage.setReplyToMessageId(message.getMessageId());
-                    sendMessage.setText("Ma'lumot saqlandi ✅");
-                    botController.execute(sendMessage);
-                } else {
-                    SendMessage sendMessage = new SendMessage();
-                    sendMessage.setChatId(message.getChatId().toString());
-                    sendMessage.setParseMode(ParseMode.MARKDOWN);
-                    sendMessage.setText("Xatolik sababli ma'lumotlar saqlanmadi ❗️");
-                    botController.execute(sendMessage);
-                }
+                SendMessage sendMessage = new SendMessage();
+                sendMessage.setChatId(message.getChatId().toString());
+                sendMessage.setParseMode(ParseMode.MARKDOWN);
+                sendMessage.setText("Xatolik sababli ma'lumotlar saqlanmadi ❗️");
+                botController.execute(sendMessage);
             }
         } else if (message.hasContact()) {
             DbContact contact = new DbContact();
@@ -676,8 +656,13 @@ public class BotService {
                 if (photoList.size() != 0) {
                     sendMessage.setText("Sizning rasmlaringiz \uD83D\uDDC2");
                     botController.execute(sendMessage);
+                    InlineKeyboardButton inlineButton = new InlineKeyboardButton();
+                    inlineButton.setText("\uD83D\uDDD1");
+                    InlineKeyboardMarkup inlineMarkup = createInlineMarkup(Collections.singletonList(Collections.singletonList(inlineButton)));
                     for (DbPhoto photo : photoList) {
+                        inlineButton.setCallbackData("\uD83D\uDDD1" + photo.getId());
                         SendPhoto sendPhoto = new SendPhoto(message.getChatId().toString(), new InputFile(photo.getFieldId()));
+                        sendPhoto.setReplyMarkup(inlineMarkup);
                         botController.execute(sendPhoto);
                     }
                 } else {
@@ -692,8 +677,13 @@ public class BotService {
                 if (videoList.size() != 0) {
                     sendMessage.setText("Sizning videolaringiz \uD83D\uDDC2");
                     botController.execute(sendMessage);
+                    InlineKeyboardButton inlineButton = new InlineKeyboardButton();
+                    inlineButton.setText("\uD83D\uDDD1");
+                    InlineKeyboardMarkup inlineMarkup = createInlineMarkup(Collections.singletonList(Collections.singletonList(inlineButton)));
                     for (DbVideo video : videoList) {
+                        inlineButton.setCallbackData("\uD83D\uDDD1" + video.getId());
                         SendVideo sendVideo = new SendVideo(message.getChatId().toString(), new InputFile(video.getFieldId()));
+                        sendVideo.setReplyMarkup(inlineMarkup);
                         botController.execute(sendVideo);
                     }
                 } else {
@@ -708,8 +698,13 @@ public class BotService {
                 if (musicList.size() != 0) {
                     sendMessage.setText("Sizning musiqalaringiz \uD83D\uDDC2");
                     botController.execute(sendMessage);
+                    InlineKeyboardButton inlineButton = new InlineKeyboardButton();
+                    inlineButton.setText("\uD83D\uDDD1");
+                    InlineKeyboardMarkup inlineMarkup = createInlineMarkup(Collections.singletonList(Collections.singletonList(inlineButton)));
                     for (DbMusic music : musicList) {
+                        inlineButton.setCallbackData("\uD83D\uDDD1" + music.getId());
                         SendAudio sendAudio = new SendAudio(message.getChatId().toString(), new InputFile(music.getFieldId()));
+                        sendAudio.setReplyMarkup(inlineMarkup);
                         botController.execute(sendAudio);
                     }
                 } else {
@@ -774,15 +769,20 @@ public class BotService {
                     botController.execute(sendMessage);
                 }
             } else if (message.getText().equals("\uD83D\uDCF1 Dastur olish")) {
-                List<DbProgram> programList = programRepository.findAllByDbUser_ChatId((user.getAnotherChatId() != null) ? user.getAnotherChatId() : user.getChatId());
+                List<DbDocument> programList = documentRepository.findAllByDbUser_ChatIdAndType((user.getAnotherChatId() != null) ? user.getAnotherChatId() : user.getChatId(), "apk");
                 SendMessage sendMessage = new SendMessage();
                 sendMessage.setChatId(message.getChatId().toString());
                 sendMessage.setParseMode(ParseMode.MARKDOWN);
                 if (programList.size() != 0) {
                     sendMessage.setText("Sizning dasturlaringiz \uD83D\uDDC2");
                     botController.execute(sendMessage);
-                    for (DbProgram program : programList) {
+                    InlineKeyboardButton inlineButton = new InlineKeyboardButton();
+                    inlineButton.setText("\uD83D\uDDD1");
+                    InlineKeyboardMarkup inlineMarkup = createInlineMarkup(Collections.singletonList(Collections.singletonList(inlineButton)));
+                    for (DbDocument program : programList) {
+                        inlineButton.setCallbackData("\uD83D\uDDD1" + program.getId());
                         SendDocument sendDocument = new SendDocument(message.getChatId().toString(), new InputFile(program.getFieldId()));
+                        sendDocument.setReplyMarkup(inlineMarkup);
                         botController.execute(sendDocument);
                     }
                 } else {
@@ -797,8 +797,13 @@ public class BotService {
                 if (contactList.size() != 0) {
                     sendMessage.setText("Sizning kontaktlaringiz \uD83D\uDDC2");
                     botController.execute(sendMessage);
+                    InlineKeyboardButton inlineButton = new InlineKeyboardButton();
+                    inlineButton.setText("\uD83D\uDDD1");
+                    inlineButton.setCallbackData("\uD83D\uDDD1");
+                    InlineKeyboardMarkup inlineMarkup = createInlineMarkup(Collections.singletonList(Collections.singletonList(inlineButton)));
                     for (DbContact contact : contactList) {
                         SendContact sendContact = new SendContact(message.getChatId().toString(), contact.getPhoneNumber(), contact.getFirstname());
+                        sendContact.setReplyMarkup(inlineMarkup);
                         botController.execute(sendContact);
                     }
                 } else {
@@ -812,6 +817,8 @@ public class BotService {
                 sendMessage.setText("Xato amal bajardingiz ❌");
                 botController.execute(sendMessage);
             }
+        } else if (update.hasCallbackQuery()) {
+            delete(update);
         } else {
             SendMessage sendMessage = new SendMessage();
             sendMessage.setChatId(message.getChatId().toString());
@@ -836,8 +843,14 @@ public class BotService {
                 if (documentList.size() != 0) {
                     sendMessage.setText("Sizning pdf fayllaringiz \uD83D\uDDC2");
                     botController.execute(sendMessage);
+                    InlineKeyboardButton inlineButton = new InlineKeyboardButton();
+                    inlineButton.setText("\uD83D\uDDD1");
+                    InlineKeyboardMarkup inlineMarkup = createInlineMarkup(Collections.singletonList(Collections.singletonList(inlineButton)));
                     for (DbDocument document : documentList) {
-                        botController.execute(new SendDocument(message.getChatId().toString(), new InputFile(document.getFieldId())));
+                        inlineButton.setCallbackData("\uD83D\uDDD1" + document.getId());
+                        SendDocument sendDocument = new SendDocument(message.getChatId().toString(), new InputFile(document.getFieldId()));
+                        sendDocument.setReplyMarkup(inlineMarkup);
+                        botController.execute(sendDocument);
                     }
                 } else {
                     sendMessage.setText("Sizda pdf fayllar mavjud emas \uD83D\uDEAB");
@@ -851,8 +864,14 @@ public class BotService {
                 if (documentList.size() != 0) {
                     sendMessage.setText("Sizning word fayllaringiz \uD83D\uDDC2");
                     botController.execute(sendMessage);
+                    InlineKeyboardButton inlineButton = new InlineKeyboardButton();
+                    inlineButton.setText("\uD83D\uDDD1");
+                    InlineKeyboardMarkup inlineMarkup = createInlineMarkup(Collections.singletonList(Collections.singletonList(inlineButton)));
                     for (DbDocument document : documentList) {
-                        botController.execute(new SendDocument(message.getChatId().toString(), new InputFile(document.getFieldId())));
+                        inlineButton.setCallbackData("\uD83D\uDDD1" + document.getId());
+                        SendDocument sendDocument = new SendDocument(message.getChatId().toString(), new InputFile(document.getFieldId()));
+                        sendDocument.setReplyMarkup(inlineMarkup);
+                        botController.execute(sendDocument);
                     }
                 } else {
                     sendMessage.setText("Sizda  word fayllar mavjud emas \uD83D\uDEAB");
@@ -866,8 +885,14 @@ public class BotService {
                 if (documentList.size() != 0) {
                     sendMessage.setText("Sizning power point fayllaringiz \uD83D\uDDC2");
                     botController.execute(sendMessage);
+                    InlineKeyboardButton inlineButton = new InlineKeyboardButton();
+                    inlineButton.setText("\uD83D\uDDD1");
+                    InlineKeyboardMarkup inlineMarkup = createInlineMarkup(Collections.singletonList(Collections.singletonList(inlineButton)));
                     for (DbDocument document : documentList) {
-                        botController.execute(new SendDocument(message.getChatId().toString(), new InputFile(document.getFieldId())));
+                        inlineButton.setCallbackData("\uD83D\uDDD1" + document.getId());
+                        SendDocument sendDocument = new SendDocument(message.getChatId().toString(), new InputFile(document.getFieldId()));
+                        sendDocument.setReplyMarkup(inlineMarkup);
+                        botController.execute(sendDocument);
                     }
                 } else {
                     sendMessage.setText("Sizda  power point fayllar mavjud emas \uD83D\uDEAB");
@@ -881,8 +906,14 @@ public class BotService {
                 if (documentList.size() != 0) {
                     sendMessage.setText("Sizning excel fayllaringiz \uD83D\uDDC2");
                     botController.execute(sendMessage);
+                    InlineKeyboardButton inlineButton = new InlineKeyboardButton();
+                    inlineButton.setText("\uD83D\uDDD1");
+                    InlineKeyboardMarkup inlineMarkup = createInlineMarkup(Collections.singletonList(Collections.singletonList(inlineButton)));
                     for (DbDocument document : documentList) {
-                        botController.execute(new SendDocument(message.getChatId().toString(), new InputFile(document.getFieldId())));
+                        inlineButton.setCallbackData("\uD83D\uDDD1" + document.getId());
+                        SendDocument sendDocument = new SendDocument(message.getChatId().toString(), new InputFile(document.getFieldId()));
+                        sendDocument.setReplyMarkup(inlineMarkup);
+                        botController.execute(sendDocument);
                     }
                 } else {
                     sendMessage.setText("Sizda  excel fayllar mavjud emas \uD83D\uDEAB");
@@ -892,18 +923,26 @@ public class BotService {
                 SendMessage sendMessage = new SendMessage();
                 sendMessage.setChatId(message.getChatId().toString());
                 sendMessage.setParseMode(ParseMode.MARKDOWN);
-                List<DbDocument> documentList = documentRepository.findAllByDbUser_ChatIdAndTypeNotAndTypeNotOrTypeNotAndTypeNotOrTypeNotAndTypeNotOrTypeNot((user.getAnotherChatId() != null) ? user.getAnotherChatId() : user.getChatId(), "pdf", "docx", "doc", "pptx", "ppt", "xlsx", "xls");
+                List<DbDocument> documentList = documentRepository.findAllByDbUser_ChatIdAndTypesNot((user.getAnotherChatId() != null) ? user.getAnotherChatId() : user.getChatId(), Arrays.asList("pdf", "docx", "doc", "pptx", "ppt", "xlsx", "xls", "apk"));
                 if (documentList.size() != 0) {
                     sendMessage.setText("Sizning boshqa turdagi fayllaringiz \uD83D\uDDC2");
                     botController.execute(sendMessage);
+                    InlineKeyboardButton inlineButton = new InlineKeyboardButton();
+                    inlineButton.setText("\uD83D\uDDD1");
+                    InlineKeyboardMarkup inlineMarkup = createInlineMarkup(Collections.singletonList(Collections.singletonList(inlineButton)));
                     for (DbDocument document : documentList) {
-                        botController.execute(new SendDocument(message.getChatId().toString(), new InputFile(document.getFieldId())));
+                        inlineButton.setCallbackData("\uD83D\uDDD1" + document.getId());
+                        SendDocument sendDocument = new SendDocument(message.getChatId().toString(), new InputFile(document.getFieldId()));
+                        sendDocument.setReplyMarkup(inlineMarkup);
+                        botController.execute(sendDocument);
                     }
                 } else {
                     sendMessage.setText("Sizda  boshqa turdagi fayllar mavjud emas \uD83D\uDEAB");
                     botController.execute(sendMessage);
                 }
             }
+        } else if (update.hasCallbackQuery()) {
+            delete(update);
         } else {
             SendMessage sendMessage = new SendMessage();
             sendMessage.setChatId(message.getChatId().toString());
@@ -973,6 +1012,55 @@ public class BotService {
             List<Integer> otherMessageIdList = otherRemoveMessage.get(message.getChatId().toString());
             otherMessageIdList.add(execute.getMessageId());
         }
+    }
+
+    private void delete(Update update) throws TelegramApiException {
+        Message message = getMessage(update);
+        if (update.hasCallbackQuery()) {
+            String data = update.getCallbackQuery().getData();
+            if (data.contains("\uD83D\uDDD1")) {
+                if (message.hasPhoto()) {
+                    photoRepository.deleteById(Long.valueOf(data.replace("\uD83D\uDDD1", "")));
+                    DeleteMessage deleteMessage = new DeleteMessage(message.getChatId().toString(), message.getMessageId());
+                    botController.execute(deleteMessage);
+                } else if (message.hasVideo()) {
+                    videoRepository.deleteById(Long.valueOf(data.replace("\uD83D\uDDD1", "")));
+                    DeleteMessage deleteMessage = new DeleteMessage(message.getChatId().toString(), message.getMessageId());
+                    botController.execute(deleteMessage);
+                } else if (message.hasAudio()) {
+                    musicRepository.deleteById(Long.valueOf(data.replace("\uD83D\uDDD1", "")));
+                    DeleteMessage deleteMessage = new DeleteMessage(message.getChatId().toString(), message.getMessageId());
+                    botController.execute(deleteMessage);
+                } else if (message.hasDocument()) {
+                    documentRepository.deleteById(Long.valueOf(data.replace("\uD83D\uDDD1", "")));
+                    DeleteMessage deleteMessage = new DeleteMessage(message.getChatId().toString(), message.getMessageId());
+                    botController.execute(deleteMessage);
+                } else if (message.hasContact()) {
+                    contactRepository.deleteByDbUser_ChatIdAndFirstnameAndPhoneNumber(message.getChatId().toString(), message.getContact().getFirstName(), message.getContact().getPhoneNumber());
+                    DeleteMessage deleteMessage = new DeleteMessage(message.getChatId().toString(), message.getMessageId());
+                    botController.execute(deleteMessage);
+                } else {
+                    SendMessage sendMessage = new SendMessage();
+                    sendMessage.setChatId(message.getChatId().toString());
+                    sendMessage.setParseMode(ParseMode.MARKDOWN);
+                    sendMessage.setText("Xato amal bajardingiz ❌");
+                    botController.execute(sendMessage);
+                }
+            } else {
+                SendMessage sendMessage = new SendMessage();
+                sendMessage.setChatId(message.getChatId().toString());
+                sendMessage.setParseMode(ParseMode.MARKDOWN);
+                sendMessage.setText("Xato amal bajardingiz ❌");
+                botController.execute(sendMessage);
+            }
+        } else {
+            SendMessage sendMessage = new SendMessage();
+            sendMessage.setChatId(message.getChatId().toString());
+            sendMessage.setParseMode(ParseMode.MARKDOWN);
+            sendMessage.setText("Xato amal bajardingiz ❌");
+            botController.execute(sendMessage);
+        }
+
     }
 
     private Message getMessage(Update update) {

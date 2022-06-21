@@ -10,9 +10,7 @@ public interface UserRepository extends JpaRepository<DbUser, Long> {
 
     Boolean existsByLogin(String login);
 
-    Optional<DbUser> findByLogin(String login);
-
     Optional<DbUser> findByLoginAndPassword(String login, String password);
 
-    Long countAllByChatId(String chatId);
+    Long countAllByChatIdNot(String chatId);
 }

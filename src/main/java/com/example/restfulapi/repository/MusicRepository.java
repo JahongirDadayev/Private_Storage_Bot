@@ -8,3 +8,4 @@ import java.util.List;
 public interface MusicRepository extends JpaRepository<DbMusic, Long> {
     List<DbMusic> findAllByDbUser_ChatId(String dbUser_chatId);
 }
+
