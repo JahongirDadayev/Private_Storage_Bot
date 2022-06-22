@@ -314,7 +314,7 @@ public class BotService {
                 sendMessage.setChatId(message.getChatId().toString());
                 sendMessage.setParseMode(ParseMode.MARKDOWN);
                 sendMessage.setReplyMarkup(inlineMarkup);
-                sendMessage.setText((user.getPassword()==null)?"Yangi login va parolni tasdiqlaysizmi \uD83D\uDDDE":"Yangi parolni tasdiqlaysizmi \uD83D\uDDDE");
+                sendMessage.setText((user.getPassword() == null) ? "Yangi login va parolni tasdiqlaysizmi \uD83D\uDDDE" : "Yangi parolni tasdiqlaysizmi \uD83D\uDDDE");
                 Message execute = botController.execute(sendMessage);
                 messageIdList.add(execute.getMessageId());
             }
@@ -1074,11 +1074,11 @@ public class BotService {
                     photoRepository.deleteById(Long.valueOf(data.replace("\uD83D\uDDD1", "")));
                     DeleteMessage deleteMessage = new DeleteMessage(message.getChatId().toString(), message.getMessageId());
                     botController.execute(deleteMessage);
-                } else if (message.hasVideo()) {
+                } else if (message.hasVideo() || message.hasVideoNote()) {
                     videoRepository.deleteById(Long.valueOf(data.replace("\uD83D\uDDD1", "")));
                     DeleteMessage deleteMessage = new DeleteMessage(message.getChatId().toString(), message.getMessageId());
                     botController.execute(deleteMessage);
-                } else if (message.hasAudio()) {
+                } else if (message.hasAudio() || message.hasVoice()) {
                     musicRepository.deleteById(Long.valueOf(data.replace("\uD83D\uDDD1", "")));
                     DeleteMessage deleteMessage = new DeleteMessage(message.getChatId().toString(), message.getMessageId());
                     botController.execute(deleteMessage);
