@@ -547,9 +547,9 @@ public class BotService {
                 sendMessage.setText("Xatolik sababli ma'lumotlar saqlanmadi ❗️");
                 botController.execute(sendMessage);
             }
-        } else if (message.hasVideo()) {
+        } else if (message.hasVideo() || message.hasVideoNote()) {
             DbVideo video = new DbVideo();
-            video.setFieldId(message.getVideo().getFileId());
+            video.setFieldId((message.hasVideo())?message.getVideo().getFileId():message.getVideoNote().getFileId());
             Optional<DbUser> optionalDbUser = userRepository.findByChatId((user.getAnotherChatId() != null) ? user.getAnotherChatId() : user.getChatId());
             if (optionalDbUser.isPresent()) {
                 video.setDbUser(optionalDbUser.get());
@@ -567,9 +567,9 @@ public class BotService {
                 sendMessage.setText("Xatolik sababli ma'lumotlar saqlanmadi ❗️");
                 botController.execute(sendMessage);
             }
-        } else if (message.hasAudio()) {
+        } else if (message.hasAudio() || message.hasVoice()) {
             DbMusic music = new DbMusic();
-            music.setFieldId(message.getAudio().getFileId());
+            music.setFieldId((message.hasAudio())?message.getAudio().getFileId():message.getVoice().getFileId());
             Optional<DbUser> optionalDbUser = userRepository.findByChatId((user.getAnotherChatId() != null) ? user.getAnotherChatId() : user.getChatId());
             if (optionalDbUser.isPresent()) {
                 music.setDbUser(optionalDbUser.get());
@@ -716,7 +716,14 @@ public class BotService {
                 SendMessage sendMessage = new SendMessage();
                 sendMessage.setChatId(message.getChatId().toString());
                 sendMessage.setParseMode(ParseMode.MARKDOWN);
-                if (documentList.size() != 0) {
+                boolean check = false;
+                for (DbDocument document : documentList) {
+                    if (!document.getType().equals("apk")) {
+                        check = true;
+                        break;
+                    }
+                }
+                if (documentList.size() != 0 && check) {
                     user.setBotState(BotState.GET_DOCUMENT);
                     userRepository.save(user);
                     sendMessage.setText("Tanlovdi amalga oshiring ✅");
@@ -747,7 +754,7 @@ public class BotService {
                                 }
                                 break;
                             default:
-                                if (!keyboardButtonMap.containsKey("others")) {
+                                if (!keyboardButtonMap.containsKey("others") && !document.getType().equals("apk")) {
                                     keyboardButtonMap.put("others", new KeyboardButton("Boshqa Fayllar"));
                                 }
                                 break;
