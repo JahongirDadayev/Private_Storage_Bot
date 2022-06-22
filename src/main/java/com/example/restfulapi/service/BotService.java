@@ -69,6 +69,15 @@ public class BotService {
                 DbUser user = optionalDbUser.get();
                 user.setBotState(BotState.HELP);
                 return user;
+            } else if (message.hasText() && message.getText().equals("/developer")) {
+                SendMessage sendMessage = new SendMessage();
+                sendMessage.setChatId(message.getChatId().toString());
+                sendMessage.setParseMode(ParseMode.MARKDOWN);
+                sendMessage.setText("[\uD83D\uDC68\uD83C\uDFFB\u200D\uD83D\uDCBB Jahongir Dadayev](https://t.me/spring_dev)");
+                botController.execute(sendMessage);
+                DbUser user = optionalDbUser.get();
+                user.setBotState(BotState.DEVELOPER);
+                return user;
             } else {
                 return optionalDbUser.get();
             }
@@ -206,7 +215,7 @@ public class BotService {
                 SendMessage sendMessage = new SendMessage();
                 sendMessage.setChatId(message.getChatId().toString());
                 sendMessage.setParseMode(ParseMode.MARKDOWN);
-                sendMessage.setText("Bu raqamga kabinet hosil qilingan \uD83D\uDEAB .");
+                sendMessage.setText("Bu raqamga kabinet hosil qilingan \uD83D\uDEAB");
                 Message execute = botController.execute(sendMessage);
                 messageIdList.add(execute.getMessageId());
             }
@@ -269,12 +278,27 @@ public class BotService {
         messageIdList.add(message.getMessageId());
         if (message.hasText()) {
             if (message.getText().equals("⬅️ Ortga qaytish")) {
-                message.setText("📝 Yangi kabinet hosil qilish");
-                update.setMessage(message);
-                tgAuthentication(update, user);
-                authLogin.remove(message.getChatId().toString());
+                if (user.getPassword() == null) {
+                    message.setText("📝 Yangi kabinet hosil qilish");
+                    update.setMessage(message);
+                    tgAuthentication(update, user);
+                    authLogin.remove(message.getChatId().toString());
+                } else {
+                    Chat acceptChat = new Chat();
+                    acceptChat.setId(message.getChatId());
+                    Message acceptMessage = new Message();
+                    acceptMessage.setChat(acceptChat);
+                    CallbackQuery callbackQuery = new CallbackQuery();
+                    callbackQuery.setData("✔️");
+                    callbackQuery.setMessage(acceptMessage);
+                    Update acceptUpdate = new Update();
+                    acceptUpdate.setCallbackQuery(callbackQuery);
+                    tgAccept(acceptUpdate, user, false);
+                }
             } else {
-                user.setLogin(authLogin.get(message.getChatId().toString()));
+                if (user.getPassword() == null) {
+                    user.setLogin(authLogin.get(message.getChatId().toString()));
+                }
                 user.setPassword(message.getText());
                 user.setBotState(BotState.ACCEPTED);
                 userRepository.save(user);
@@ -290,7 +314,7 @@ public class BotService {
                 sendMessage.setChatId(message.getChatId().toString());
                 sendMessage.setParseMode(ParseMode.MARKDOWN);
                 sendMessage.setReplyMarkup(inlineMarkup);
-                sendMessage.setText("Yangi login va parolni tasdiqlaysizmi \uD83D\uDDDE");
+                sendMessage.setText((user.getPassword()==null)?"Yangi login va parolni tasdiqlaysizmi \uD83D\uDDDE":"Yangi parolni tasdiqlaysizmi \uD83D\uDDDE");
                 Message execute = botController.execute(sendMessage);
                 messageIdList.add(execute.getMessageId());
             }
@@ -342,7 +366,7 @@ public class BotService {
                     SendMessage sendMessage = new SendMessage();
                     sendMessage.setChatId(message.getChatId().toString());
                     sendMessage.setParseMode(ParseMode.MARKDOWN);
-                    sendMessage.setText("Siz xato login yoki parol kiritdingiz ❗️ .");
+                    sendMessage.setText("Siz xato login yoki parol kiritdingiz ❗️ . Parolni qayta yuborishingiz mumkin \uD83D\uDD04");
                     Message execute = botController.execute(sendMessage);
                     messageIdList.add(execute.getMessageId());
                 }
@@ -376,8 +400,14 @@ public class BotService {
                 KeyboardButton button2 = new KeyboardButton();
                 button2.setText("\uD83D\uDCE5 Ma'lumot olish");
                 KeyboardButton button3 = new KeyboardButton();
-                button3.setText("\uD83D\uDEB6 Kabinetdan chiqish \uD83D\uDEB6\u200D♀️");
-                ReplyKeyboardMarkup markup = createMarkup(Arrays.asList(Arrays.asList(button1, button2), Collections.singletonList(button3)));
+                button3.setText("🚪 Kabinetdan chiqish");
+                ReplyKeyboardMarkup markup;
+                if (user.getAnotherChatId() == null || user.getChatId().equals(user.getAnotherChatId())) {
+                    KeyboardButton button4 = new KeyboardButton("\uD83D\uDD10 Parol o'zgartirish");
+                    markup = createMarkup(Arrays.asList(Arrays.asList(button1, button2), Arrays.asList(button3, button4)));
+                } else {
+                    markup = createMarkup(Arrays.asList(Arrays.asList(button1, button2), Collections.singletonList(button3)));
+                }
                 SendMessage sendMessage = new SendMessage();
                 sendMessage.setChatId(message.getChatId().toString());
                 sendMessage.setParseMode(ParseMode.MARKDOWN);
@@ -487,13 +517,27 @@ public class BotService {
                 sendMessage.setReplyMarkup(markup);
                 sendMessage.setText("Ma'lumotlaringizni olishni amalga oshirishingiz mumkin \uD83D\uDCCE");
                 botController.execute(sendMessage);
-            } else if (message.getText().equals("\uD83D\uDEB6 Kabinetdan chiqish \uD83D\uDEB6\u200D♀️")) {
+            } else if (message.getText().equals("🚪 Kabinetdan chiqish")) {
                 user.setConfirmationChatId(null);
                 user.setAnotherChatId(null);
                 userRepository.save(user);
                 message.setText("/start");
                 update.setMessage(message);
                 tgStart(update, user, false);
+            } else if (message.getText().equals("\uD83D\uDD10 Parol o'zgartirish")) {
+                user.setBotState(BotState.NEW_PASSWORD);
+                userRepository.save(user);
+                removeMessage.put(message.getChatId().toString(), new ArrayList<>());
+                KeyboardButton button = new KeyboardButton("⬅️ Ortga qaytish");
+                ReplyKeyboardMarkup markup = createMarkup(Collections.singletonList(Collections.singletonList(button)));
+                SendMessage sendMessage = new SendMessage();
+                sendMessage.setChatId(message.getChatId().toString());
+                sendMessage.setParseMode(ParseMode.MARKDOWN);
+                sendMessage.setReplyMarkup(markup);
+                sendMessage.setText("Parol kiriting ✏️...");
+                Message execute = botController.execute(sendMessage);
+                List<Integer> messageIdList = removeMessage.get(message.getChatId().toString());
+                messageIdList.add(execute.getMessageId());
             } else {
                 SendMessage sendMessage = new SendMessage();
                 sendMessage.setChatId(message.getChatId().toString());
@@ -549,7 +593,7 @@ public class BotService {
             }
         } else if (message.hasVideo() || message.hasVideoNote()) {
             DbVideo video = new DbVideo();
-            video.setFieldId((message.hasVideo())?message.getVideo().getFileId():message.getVideoNote().getFileId());
+            video.setFieldId((message.hasVideo()) ? message.getVideo().getFileId() : message.getVideoNote().getFileId());
             Optional<DbUser> optionalDbUser = userRepository.findByChatId((user.getAnotherChatId() != null) ? user.getAnotherChatId() : user.getChatId());
             if (optionalDbUser.isPresent()) {
                 video.setDbUser(optionalDbUser.get());
@@ -569,7 +613,7 @@ public class BotService {
             }
         } else if (message.hasAudio() || message.hasVoice()) {
             DbMusic music = new DbMusic();
-            music.setFieldId((message.hasAudio())?message.getAudio().getFileId():message.getVoice().getFileId());
+            music.setFieldId((message.hasAudio()) ? message.getAudio().getFileId() : message.getVoice().getFileId());
             Optional<DbUser> optionalDbUser = userRepository.findByChatId((user.getAnotherChatId() != null) ? user.getAnotherChatId() : user.getChatId());
             if (optionalDbUser.isPresent()) {
                 music.setDbUser(optionalDbUser.get());

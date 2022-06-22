@@ -2,6 +2,7 @@ package com.example.restfulapi.state;
 
 public enum BotState {
     HELP,
+    DEVELOPER,
     START,
     AUTHENTICATION,
     NEW_LOGIN,
