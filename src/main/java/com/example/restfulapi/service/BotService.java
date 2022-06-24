@@ -457,14 +457,18 @@ public class BotService {
                 sendMessage.setChatId(message.getChatId().toString());
                 sendMessage.setParseMode(ParseMode.MARKDOWN);
                 sendMessage.setText("Xato amal bajardingiz ❌");
-                botController.execute(sendMessage);
+                Message execute = botController.execute(sendMessage);
+                List<Integer> otherMessageIdList = otherRemoveMessage.get(user.getAnotherChatId());
+                otherMessageIdList.add(execute.getMessageId());
             }
         } else {
             SendMessage sendMessage = new SendMessage();
             sendMessage.setChatId(message.getChatId().toString());
             sendMessage.setParseMode(ParseMode.MARKDOWN);
             sendMessage.setText("Xato amal bajardingiz ❌");
-            botController.execute(sendMessage);
+            Message execute = botController.execute(sendMessage);
+            List<Integer> otherMessageIdList = otherRemoveMessage.get(user.getAnotherChatId());
+            otherMessageIdList.add(execute.getMessageId());
         }
     }
 
@@ -1021,6 +1025,14 @@ public class BotService {
                 botController.execute(sendMessage);
                 update.getCallbackQuery().setData("✔️");
                 tgAccept(update, user, false);
+            } else {
+                SendMessage sendMessage = new SendMessage();
+                sendMessage.setChatId(message.getChatId().toString());
+                sendMessage.setParseMode(ParseMode.MARKDOWN);
+                sendMessage.setText("Xato amal bajardingiz ❌");
+                Message execute = botController.execute(sendMessage);
+                List<Integer> otherMessageIdList = otherRemoveMessage.get(message.getChatId().toString());
+                otherMessageIdList.add(execute.getMessageId());
             }
         } else {
             SendMessage sendMessage = new SendMessage();
